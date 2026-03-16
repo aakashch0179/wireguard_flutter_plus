@@ -1,6 +1,6 @@
 package orban.group.wireguard_flutter.config
 
-import com.wireguard.config.Config
+import org.amnezia.awg.config.Config
 import java.io.BufferedReader
 import java.io.StringReader
 

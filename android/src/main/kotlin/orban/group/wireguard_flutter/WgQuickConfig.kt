@@ -2,7 +2,7 @@ package orban.group.wireguard_flutter.config
 
 import java.io.StringReader
 import java.io.BufferedReader
-import com.wireguard.config.Config
+import org.amnezia.awg.config.Config
 
 
 object WgQuickConfig {

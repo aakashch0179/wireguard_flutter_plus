@@ -49,7 +49,7 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'com.wireguard.android:tunnel:1.0.20230427'
+    implementation 'com.zaneschepke:amneziawg-android:2.3.7'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2"
     implementation 'com.beust:klaxon:5.5'

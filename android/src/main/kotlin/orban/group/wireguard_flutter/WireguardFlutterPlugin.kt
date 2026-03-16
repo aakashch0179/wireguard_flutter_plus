@@ -24,14 +24,18 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import android.util.Log
 import com.beust.klaxon.Klaxon
-// import com.wireguard.android.backend.*
-import com.wireguard.android.backend.Backend
-import com.wireguard.android.backend.BackendException
-import com.wireguard.android.backend.GoBackend
-import com.wireguard.android.backend.Tunnel
-import com.wireguard.crypto.Key
-import com.wireguard.crypto.KeyPair
-import com.wireguard.config.Config
+// import org.amnezia.awg.backend.*
+
+import org.amnezia.awg.backend.Backend
+import org.amnezia.awg.backend.BackendException
+import org.amnezia.awg.backend.GoBackend
+import org.amnezia.awg.backend.Tunnel
+import org.amnezia.awg.crypto.Key
+import org.amnezia.awg.crypto.KeyPair
+import org.amnezia.awg.config.Config
+
+import org.amnezia.awg.backend.TunnelActionHandler
+import org.amnezia.awg.backend.NoopTunnelActionHandler
 
 import io.flutter.plugin.common.EventChannel
 import kotlinx.coroutines.*
@@ -93,7 +97,7 @@ class WireguardFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
 
     private lateinit var tunnelName: String
     private var vpnDisplayName: String = "WireGuard VPN" // Custom VPN display name
-    private var config: com.wireguard.config.Config? = null
+    private var config: org.amnezia.awg.config.Config? = null
     private var tunnel: WireGuardTunnel? = null
     private val TAG = "NVPN"
     var isVpnChecked = false
@@ -193,7 +197,7 @@ val savedConfigString = prefs.getString("last_used_config", null)
 
 if (!savedTunnelName.isNullOrEmpty() && !savedConfigString.isNullOrEmpty()) {
     try {
-        val parsed = com.wireguard.config.Config.parse(savedConfigString.byteInputStream())
+        val parsed = org.amnezia.awg.config.Config.parse(savedConfigString.byteInputStream())
         if (parsed != null) {
             tunnelName = savedTunnelName
             config = parsed
@@ -258,8 +262,11 @@ if (!savedTunnelName.isNullOrEmpty() && !savedConfigString.isNullOrEmpty()) {
    
 
     private fun createBackend(): Backend {
+
+        var tunnelActionHandler : TunnelActionHandler = NoopTunnelActionHandler()
+ 
         if (backend == null) {
-            backend = GoBackend(context)
+            backend = GoBackend(context, tunnelActionHandler)
         }
         return backend as Backend
     }
@@ -392,7 +399,7 @@ private fun connect(wgQuickConfig: String, result: Result) {
                 updateStage("prepare")
 
                 val inputStream = ByteArrayInputStream(wgQuickConfig.toByteArray())
-                val parsedConfig = com.wireguard.config.Config.parse(inputStream)
+                val parsedConfig = org.amnezia.awg.config.Config.parse(inputStream)
                     ?: throw Exception("Failed to parse WireGuard config")
 
                 updateStage("connecting")
@@ -456,7 +463,7 @@ private fun disconnect(result: Result) {
                 val prefs = context.getSharedPreferences("vpn_prefs", Context.MODE_PRIVATE)
                 val savedConfigString = prefs.getString("last_used_config", null)
                 if (!savedConfigString.isNullOrEmpty()) {
-                    config = com.wireguard.config.Config.parse(savedConfigString.byteInputStream())
+                    config = org.amnezia.awg.config.Config.parse(savedConfigString.byteInputStream())
                     Log.i(TAG, "Loaded config from SharedPreferences for disconnect")
                 }
             }
@@ -636,7 +643,7 @@ private fun disconnect(result: Result) {
     }
 
     private fun checkPermission() {
-        val intent = GoBackend.VpnService.prepare(this.activity)
+        val intent = VpnService.prepare(this.activity)
         if (intent != null) {
             havePermission = false
             this.activity?.startActivityForResult(intent, PERMISSIONS_REQUEST_CODE)
@@ -895,6 +902,10 @@ class WireGuardTunnel(
     override fun onStateChange(newState: Tunnel.State) {
         onStateChanged?.invoke(newState)
     }
+
+    override fun isIpv4ResolutionPreferred() = false
+
+    override fun isMetered() = true
 }
 
 object VpnTrafficStats {
