@@ -541,6 +541,21 @@ private fun disconnect(result: Result) {
                 stopTrafficMonitor()
                 resetTrafficStats()
                 
+                // ✅ Recreate tunnel if null on restart
+                if (tunnel == null && this@WireguardFlutterPlugin::tunnelName.isInitialized && !tunnelName.isNullOrEmpty()) {
+                    Log.i(TAG, "Creating new tunnel object for orphaned disconnect using tunnelName: $tunnelName")
+                    tunnel(tunnelName) { state ->
+                        scope.launch(Dispatchers.Main) {
+                            Log.i(TAG, "onStateChange - $state")
+                            if (state == Tunnel.State.DOWN) {
+                                resetTrafficStats()
+                                stopTrafficMonitor()
+                                updateStageFromState(state)
+                            }
+                        }
+                    }
+                }
+                
                 // ✅ The backend doesn't know about this tunnel, so we need to bring it UP first
                 // then immediately bring it DOWN to properly terminate it
                 if (tunnel != null && config != null) {
